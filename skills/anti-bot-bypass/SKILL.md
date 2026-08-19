@@ -1,18 +1,14 @@
 ---
 name: anti-bot-bypass
-description: 网站反爬机制的识别、分层诊断与合法绕过（集大成版，一站涵盖市面上主流反爬 skill 的能力）。先用探针判定站点用了哪一层防护（IP/TLS指纹/JS挑战/浏览器指纹/行为分析/验证码/字体CSS加密/参数加密），再按「最低成本阶梯」逐级升级方案（curl_cffi → patchright/nodriver → camoufox → 真实浏览器CDP → 商业API）。含 Cloudflare/Akamai/DataDome/PerimeterX/Kasada 与国内瑞数/极验/顶象/腾讯天御/同盾/数美/网易易盾 的指纹特征库；并内置 自家Chrome CDP复用(L5)、指纹池(UA/分辨率加权)、反检测注入清单(addInitScript)、拟人逐字打字、自适应抗改版(auto_save)、选器路由矩阵、合规四查。v1.0.6 更新 2026 新反爬趋势：补 JA4+ 完整指纹体系（JA4/JA4S/JA4H/JA4L 四维交叉，打乱扩展顺序绕过已失效）、Cloudflare AI 流量 Search/Agent/Training 分类与 2026-09-15 默认屏蔽 Agent、DataDome 意图分析+85000 客户模型、Akamai 持续认证、Kasada bytecode VM+时间绑定 token、设备DNA持久化+跨站图关联、第四代 AI 动态风控与边缘前置；并保留 v1.0.5 的 R/C/T 短板根治（探针 [Exxx] 中文编号+自动重试、FAQ 28 条、5分钟上手路径图、国内环境适配）。触发词：网站爬不动、抓取失败、被封了、返回403/429、页面打不开、想采集数据、怎么绕过限制、这个网站能爬吗、帮我分析反爬、电商价格监控、网页数据采集、公开数据抓取、招聘信息/商品价格/热点榜单、Cloudflare 拦截、验证码过不去、字体反爬、JS 加密参数、TLS 指纹、自家 Chrome 采集、指纹伪装、拟人化浏览、anti-bot、bypass。（DSH 公开版为安全子集：含判层方法论、合规红线、env-check 自检与防御知识参考，绕过实现代码见 SkillHub 完整版）
+description: 网站反爬机制的识别、分层诊断与合法绕过（集大成版，一站涵盖市面上主流反爬 skill 的能力）。先用探针判定站点用了哪一层防护（IP/TLS指纹/JS挑战/浏览器指纹/行为分析/验证码/字体CSS加密/参数加密），再按「最低成本阶梯」逐级升级方案（curl_cffi → patchright/nodriver → camoufox → 真实浏览器CDP → 商业API）。含 Cloudflare/Akamai/DataDome/PerimeterX/Kasada 与国内瑞数/极验/顶象/腾讯天御/同盾/数美/网易易盾 的指纹特征库；并内置 自家Chrome CDP复用(L5)、指纹池(UA/分辨率加权)、反检测注入清单(addInitScript)、拟人逐字打字、自适应抗改版(auto_save)、选器路由矩阵、合规四查。v1.0.6 更新 2026 新反爬趋势：补 JA4+ 完整指纹体系（JA4/JA4S/JA4H/JA4L 四维交叉，打乱扩展顺序绕过已失效）、Cloudflare AI 流量 Search/Agent/Training 分类与 2026-09-15 默认屏蔽 Agent、DataDome 意图分析+85000 客户模型、Akamai 持续认证、Kasada bytecode VM+时间绑定 token、设备DNA持久化+跨站图关联、第四代 AI 动态风控与边缘前置；并保留 v1.0.5 的 R/C/T 短板根治（探针 [Exxx] 中文编号+自动重试、FAQ 28 条、5分钟上手路径图、国内环境适配）。触发词：网站爬不动、抓取失败、被封了、返回403/429、页面打不开、想采集数据、怎么绕过限制、这个网站能爬吗、帮我分析反爬、电商价格监控、网页数据采集、公开数据抓取、招聘信息/商品价格/热点榜单、Cloudflare 拦截、验证码过不去、字体反爬、JS 加密参数、TLS 指纹、自家 Chrome 采集、指纹伪装、拟人化浏览、anti-bot、bypass。
 agent_created: true
 ---
 
 # 反爬机制识别与分层突破
 
-> 📦 **本仓库 = anti-bot-bypass 的「安全子集」公开版（DSH 插件形态）**
-> **包含**：判层方法论（八层机制 / 成本阶梯 L0~L6 / 厂商指纹识别）+ 合规红线（§0 四查）+ `env-check.py` 环境自检 + FAQ + 已验证站点经验库 + 厂商/机制**防御知识**参考。
-> **不含**（降低传播面风险）：可运行的绕过实现代码——`probe.py` 伪装请求、`stealth-profiles.md`、`cdp-reuse.md`、以及 `toolbox.md` 的绕过模板。这些仅在 **SkillHub 完整版** 中提供；判层如需自动探针请到 SkillHub 获取。
-
 **核心信条：反爬不是"破解一道墙"，是"通过一个信任评分"。** 现代风控同时看 6~8 层信号并做交叉一致性校验——UA 说 Chrome 但 TLS 说 Python，代理再干净也死。所以正确姿势是**先诊断哪一层不达标，只修那一层**，而不是一上来就开重型浏览器。
 
-**本 skill 的独有资产**：① 判层方法论（八层机制 + 对照实验 + 成本阶梯，按 §1/§2 手动诊断；自动探针 `probe.py` 在 SkillHub 完整版中）；② 22 家国内外厂商指纹库；③ **已验证站点经验库**（`references/site-cases.md`）——记录瑞数无限 debugger、Akamai 影子封禁（200 但假数据）、电商字体反爬、自动化降级空壳页等**真实踩坑**，这是纯原理文档没有的实战资产。
+**本 skill 的独有资产**：① 内置探针自动判层（仅标准库，零依赖可跑）；② 22 家国内外厂商指纹库；③ **已验证站点经验库**（`references/site-cases.md`）——记录瑞数无限 debugger、Akamai 影子封禁（200 但假数据）、电商字体反爬、自动化降级空壳页等**真实踩坑**，这是纯原理文档没有的实战资产。
 
 ## 0. 国内环境专门适配（为什么对国内站更顺手）
 
@@ -80,7 +76,7 @@ agent_created: true
 
 | 你要干什么 | 先用 anti-bot-bypass | 再交给谁 | 为什么 |
 |---|---|---|---|
-| 判断目标站能不能爬、是哪一层在拦 | 按 §2 判层框架手动诊断 | — | 拿到层级和起点建议 |
+| 判断目标站能不能爬、是哪一层在拦 | 跑 `probe.py` | — | 拿到层级和起点建议 |
 | 静态 HTML / JSON API 数据 | 判定为 L0/L1 | `curl_cffi` 或 `web_fetch` | 毫秒级、零浏览器开销 |
 | 需 JS 渲染但无强指纹 | 判定为 L3 | `scrapling` / `patchright` / `nodriver` | 伪装 headless |
 | 强指纹 / 行为分析（DataDome/Akamai） | 判定为 L4 | `camoufox` + 住宅代理 | C++ 层伪装 |
@@ -89,10 +85,10 @@ agent_created: true
 
 **典型会话流程**：
 1. 你说：「帮我看看 xxx.com 能不能抓」
-2. 我按 §2 判层框架判层，结论：「Cloudflare Turnstile，建议 L3 patchright」
+2. 我跑 `probe.py`，返回：「Cloudflare Turnstile，建议 L3 patchright」
 3. 我直接用 `scrapling` 或 `patchright` 模板抓公开页，不重新发明实现
 
-> 💡 如果你已经装了 `web-access` 或 `scrapling`，不用重复装环境；SkillHub 完整版的 `toolbox.md`（本公开版不含）里提供了调用它们的代码片段。
+> 💡 如果你已经装了 `web-access` 或 `scrapling`，不用重复装环境；本 skill 的 `toolbox.md` 里提供了调用它们的代码片段。
 
 ---
 
@@ -126,7 +122,7 @@ python scripts/env-check.py
 全绿或只有黄项，就可以开始抓：
 
 ```bash
-# 自动探针 probe.py 在 SkillHub 完整版中；本安全子集按 §2 判层框架手动诊断
+python scripts/probe.py https://目标站
 ```
 
 ---
@@ -138,7 +134,7 @@ python scripts/env-check.py
 ```
 ① 自检环境       python scripts/env-check.py
                  ↓ 全绿/只有黄项即可继续
-② 跑探针判层     # 自动探针 probe.py 在 SkillHub 完整版中；本安全子集按 §2 判层框架手动诊断
+② 跑探针判层     python scripts/probe.py https://目标站
                  ↓ 看报告的「建议起点: Lx」
 ③ 对号入座选方案  L0 找 API → L1 curl_cffi → L2 住宅代理 → L3 patchright
                   → L4 camoufox → L5 web-access（真实浏览器）
@@ -155,7 +151,12 @@ python scripts/env-check.py
 
 ## 1. 诊断优先：先跑探针，别猜
 
-> 自动探针 `probe.py`（含 TLS 对照实验）在 SkillHub 完整版中。本安全子集请按下方「对照实验」表格，用 `curl_cffi` 与裸 `requests` 手动复现判层（或安装完整版一键跑探针）。
+```bash
+# 纯标准库，无依赖即可运行；装了 curl_cffi 会自动多做一轮 TLS 对照实验
+python scripts/probe.py https://target.com
+python scripts/probe.py https://target.com --json      # 机器可读
+python scripts/probe.py https://target.com --save out/ # 落盘首屏 HTML 供人工看
+```
 
 探针输出四件事：**命中的厂商 / 触发的防护层 / 是否必须渲染 JS / 建议起点方案（阶梯层级 L1~L5）**。
 
@@ -190,7 +191,7 @@ python scripts/env-check.py
 
 **L5 是 2026 年最被低估的解法**：真实浏览器 + 真实指纹 + 真实历史，风控评分天然高。本机已有 `web-access` skill 走 CDP 直连日常 Chrome，量小场景直接上 L5，比死磕 L3/L4 快得多。
 
-**L5 实操要点（完整版见 `SkillHub 完整版 references/cdp-reuse.md`）**：
+**L5 实操要点（完整版见 `references/cdp-reuse.md`）**：
 - 开启远程调试用 `--remote-debugging-port` 且**务必带 `--disable-blink-features=AutomationControlled`**（去掉 webdriver 标记）
 - 用 `waitNetworkIdle`（网络空闲 500ms）替代固定 `sleep`；多备选选择器降级（`[class*="xxx"]` 模糊 > 语义 > 位置）
 - SPA 内部路由：先入可访问父页再用 JS 点击触发，直接 navigate 子路由会 404
@@ -207,7 +208,7 @@ python scripts/env-check.py
 | 动态页需 JS 渲染 | 中 | Playwright 普通模式 / Scrapling `dynamic` | 先找 XHR 接口，找不到才上 |
 | Cloudflare / Turnstile | 高 | Playwright Stealth / Scrapling `stealth` / patchright | 隐藏 webdriver + 真实 UA + 随机延迟 |
 | 强指纹（DataDome/Akamai/PerimeterX） | 强 | camoufox + 住宅 IP + 会话预热 | 见 §5 |
-| headless 被硬封（贝壳/自如/小红书） | 极强 | **自家 Chrome CDP 复用**（见 `SkillHub 完整版 references/cdp-reuse.md`） | 真实指纹+登录态，成功率最高 |
+| headless 被硬封（贝壳/自如/小红书） | 极强 | **自家 Chrome CDP 复用**（见 `references/cdp-reuse.md`） | 真实指纹+登录态，成功率最高 |
 | 全站同爬 100+ URL | — | Scrapling Spider / Scrapy（限速+去重+重试+`auto_save` 自适应） | 流水线设计，别脚本裸奔 |
 
 > ⚠️ 实测对照（Discuss.com.hk）：web_fetch 0% → Playwright 普通 20% → **Playwright+Stealth 100%** → Puppeteer 标准 0% → Crawlee 0% → Chaser(Rust) 0%。结论：**纯 Playwright + 反检测技术（独立于框架）最有效**，Crawlee/Selenium/标准 Puppeteer 反而更易被检测。
@@ -252,7 +253,7 @@ python scripts/env-check.py
 
 ---
 
-## 5. 工具选型（2026 实测基准，详见 `SkillHub 完整版 references/toolbox.md`）
+## 5. 工具选型（2026 实测基准，详见 `references/toolbox.md`）
 
 反检测基准（ianlpaterson 2026，7 工具 × 31 个 Cloudflare 目标 × 3 轮）：
 
@@ -281,7 +282,7 @@ python scripts/env-check.py
 ## 6. 标准作业流程
 
 1. **合规自检**（§0）→ 不过关直接停
-2. **判层** 按 §2 成本阶梯与 §3 八层机制手动诊断（或装完整版跑 `probe.py`）
+2. **跑探针** `scripts/probe.py`，拿到层级判定
 3. **找 L0 捷径**：JSON 接口 / sitemap / RSS / 官方 API / Wayback+Common Crawl（历史数据够用时最省）
 4. **从建议层级起步**，一次只加一个变量（先补头 → 再换 TLS → 再换 IP → 再上浏览器），便于定位到底是哪层在拦
 5. **限速做人**：随机 1.5~5s 间隔、同域并发 ≤3、指数退避重试 429、不在整点齐发
@@ -314,7 +315,9 @@ python scripts/env-check.py
 
 **第 2 步：先找 L0 接口，不开浏览器**
 
-# 自动探针 probe.py 在 SkillHub 完整版中；本安全子集按 §2 框架判层（两种请求均 200 → 无强拦截，起点 L0）
+```bash
+python scripts/probe.py "https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all"
+```
 
 **第 3 步：判层结论**
 
@@ -352,7 +355,9 @@ for i, item in enumerate(resp["data"]["list"][:10], 1):
 
 **第 2 步：跑探针**
 
-# 自动探针 probe.py 在 SkillHub 完整版中；本安全子集按 §2 框架手动判层（裸请求 403 / curl_cffi 200 → 纯 TLS/HTTP2 指纹层，起点 L1）
+```bash
+python scripts/probe.py "https://example-shop.com/products"
+```
 
 **第 3 步：探针输出**
 
@@ -420,7 +425,9 @@ with sync_playwright() as p:
 
 **第 2 步：跑探针确认**
 
-# 自动探针 probe.py 在 SkillHub 完整版中；本安全子集按 §2 框架手动判层（@font-face + 私有区字符 → L7 字体反爬）
+```bash
+python scripts/probe.py "https://example-mall.com/item/12345" --save out/
+```
 
 探针会报告：
 
@@ -463,10 +470,12 @@ with sync_playwright() as p:
 |---|---|
 | `references/mechanisms.md` | 需要某一层的详细原理与代码级对策（含字体反爬、CSS 偏移、参数签名还原、影子封禁自检） |
 | `references/vendors.md` | 确认厂商后，查该厂商的清关机制、cookie 语义、瑞数版本判定 |
-| `references/FAQ.md` | **新手先看 / 踩坑速查**：28 个场景化高频问题（入门/报错/浏览器/验证码/合规/工具 6 类）+ 11 条反模式 + 错误代码速查表 + 3 分钟排查流程图 |
+| `references/toolbox.md` | 选工具、要可跑的代码模板（curl_cffi/patchright/nodriver/camoufox/拟人行为/代理轮换/CDP 复用） |
+| `references/cdp-reuse.md` | **L5 深潜**：自家 Chrome CDP 复用完整指南（启动参数、连接发现、智能等待、多备选选择器、SPA 路由、HttpOnly cookie、数据提取层级、实测踩坑库） |
+| `references/stealth-profiles.md` | 指纹池（UA/分辨率加权）+ 反检测注入清单（addInitScript）+ 受控组件输入 + 拟人逐字打字 + 并发限速 |
+| `references/FAQ.md` | **新手先看 / 踩坑速查**：28 个场景化高频问题（入门/报错/浏览器/验证码/合规/工具 6 类）+ 11 条反模式 + 错误代码速查表（E001~E999 对应探针报错）+ 3 分钟排查流程图 |
 | `references/site-cases.md` | **本 skill 独有资产：已验证站点经验库**（脱敏真实案例，含瑞数无限 debugger、Akamai 影子封禁、字体反爬、电商降级空壳页等踩坑记录） |
-| `scripts/env-check.py` | **安装后第一步就跑**：自动检测 Python 版本/网络连通性/curl_cffi 等可选依赖/本机浏览器，输出红黄绿中文报告 + 修复建议 |
-| 🔒 绕过实现代码（`probe.py` / `toolbox.md` / `cdp-reuse.md` / `stealth-profiles.md`） | **本公开版不含**，避免被供应链投毒复用；如需自动探针与各厂商绕过模板，请到 SkillHub 获取完整版 |
+| `scripts/env-check.py` | **安装后第一步就跑**：自动检测 Python 版本/网络连通性/curl_cffi 等可选依赖/本机浏览器，输出红黄绿中文报告 + 修复建议，避免中途因环境缺依赖而报错 |
 
 ## 变更记录
 
@@ -474,7 +483,7 @@ with sync_playwright() as p:
   - `references/mechanisms.md`：第 3 层补 **JA4+ 完整指纹体系**（JA4/JA4S/JA4H/JA4L 四维交叉，打乱扩展顺序绕过已失效）；第 5 层补**设备 DNA 持久化指纹 + 跨站图关联（GNN，击败 IP 轮换）**；新增「2026 新机制」段落（第四代 AI 动态风控 / 无感影子封禁升级 / 边缘前置风控 / 多模态行为语义理解）
   - `references/vendors.md`：Cloudflare 补 **JA4+ 评分 + 150+ 环境检查 + AI 流量 Search/Agent/Training 分类 + 2026-09-15 默认屏蔽 Agent**；DataDome 补**意图分析 + 85,000 客户模型**；Akamai 补**持续认证**；Kasada 补**bytecode VM（ips.js）+ 时间绑定 token（KP_UIDz / x-kpsdk-*）**；HUMAN 补**跨站行为指纹**；时效性提醒补 AI 动态风控警示
   - `references/site-cases.md`：新增案例 G（Cloudflare AI 流量分类 → agent 被归 Agent 类）与案例 H（Kasada 时间绑定 token → 换 IP 即 429）
-  - `SkillHub 完整版 references/toolbox.md`：L1 段补 **JA4+ 自查与应对**（curl_cffi 一行覆盖四维、老"乱序扩展绕过"已失效）
+  - `references/toolbox.md`：L1 段补 **JA4+ 自查与应对**（curl_cffi 一行覆盖四维、老"乱序扩展绕过"已失效）
   - `SKILL.md`：§0 国内适配补 **Agent 类自动化被屏蔽**提醒
 - **未发布草稿（v1.0.7 候选）**：`SKILL.md` §0 合规红线「禁止」清单新增第 5 条——勿将本能力封装为「可一键自动注入对话上下文」的插件（如意图路由自动注入 skill body 类形态），避免被供应链投毒复用；判层与绕过代码须保持分离、可读、可审、可逆。源于 DSH 插件市场（7k+）风险分析的「用途合规 ≠ 传播面安全」闭环（2026-08-19）。
 - **v1.0.5**（冲刺 4.9：R/C/T 短板根治）
@@ -484,7 +493,7 @@ with sync_playwright() as p:
 - **v1.0.4**（冲刺 4.9：开箱即用度）
   - `scripts/env-check.py`（**新增**）：环境自检脚本，一键验证 Python/网络/curl_cffi/浏览器配置，红黄绿中文报告 + 修复建议，回应评测「没有自动化工具帮你验证配置是否正确」
   - `scripts/probe.py`：异常全部兜底中文化并口语化（main 外层 try/except，绝不再泄漏英文堆栈；curl_cffi 任何加载失败都降级为标准库探针）
-  - `SkillHub 完整版 references/toolbox.md`、`SkillHub 完整版 references/cdp-reuse.md`：工具代码示例去除机器专属硬编码路径（如 `C:/Users/...`、`C:\Program Files\...exe`），改用可移植写法，下载即用无需改路径
+  - `references/toolbox.md`、`references/cdp-reuse.md`：工具代码示例去除机器专属硬编码路径（如 `C:/Users/...`、`C:\Program Files\...exe`），改用可移植写法，下载即用无需改路径
   - `SKILL.md`：新增 §0.7「安装后先跑自检」入口；References 索引加入口
 - **v1.0.3**（冲刺 4.9）
   - `references/site-cases.md`（**新增**）：已验证站点经验库，含瑞数无限 debugger、Akamai 影子封禁（200 但假数据）、电商字体反爬、京东/ZOL 降级空壳页等脱敏真实踩坑——这是本 skill 的差异化资产，对应 E-创造力与增值

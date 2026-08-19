@@ -1,7 +1,7 @@
 {
   "name": "@ww15799927711/anti-bot-bypass-dsh",
-  "version": "0.1.0",
-  "description": "Opt-in DeepSeek Harness Skill-only bundle for the anti-bot-bypass (反爬机制识别与Bypass) skill — safe-subset: judgment layer + env self-check + compliance red lines. No vendor bypass implementation code.",
+  "version": "0.2.0",
+  "description": "DeepSeek Harness Skill bundle for the anti-bot-bypass (反爬机制识别与Bypass) skill — full version: judgment framework + env self-check + probe.py (curl_cffi impersonation) + vendor bypass templates (stealth-profiles/cdp-reuse/toolbox). Compliance red lines enforced.",
   "license": "MIT",
   "type": "module",
   "main": "./lib/index.js",

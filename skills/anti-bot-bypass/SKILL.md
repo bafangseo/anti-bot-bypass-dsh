@@ -1,6 +1,6 @@
 ---
 name: anti-bot-bypass
-description: 网站反爬机制的识别、分层诊断与合法绕过（集大成版，一站涵盖市面上主流反爬 skill 的能力）。先用探针判定站点用了哪一层防护（IP/TLS指纹/JS挑战/浏览器指纹/行为分析/验证码/字体CSS加密/参数加密），再按「最低成本阶梯」逐级升级方案（curl_cffi → patchright/nodriver → camoufox → 真实浏览器CDP → 商业API）。含 Cloudflare/Akamai/DataDome/PerimeterX/Kasada 与国内瑞数/极验/顶象/腾讯天御/同盾/数美/网易易盾 的指纹特征库；并内置 自家Chrome CDP复用(L5)、指纹池(UA/分辨率加权)、反检测注入清单(addInitScript)、拟人逐字打字、自适应抗改版(auto_save)、选器路由矩阵、合规四查。v1.0.6 更新 2026 新反爬趋势：补 JA4+ 完整指纹体系（JA4/JA4S/JA4H/JA4L 四维交叉，打乱扩展顺序绕过已失效）、Cloudflare AI 流量 Search/Agent/Training 分类与 2026-09-15 默认屏蔽 Agent、DataDome 意图分析+85000 客户模型、Akamai 持续认证、Kasada bytecode VM+时间绑定 token、设备DNA持久化+跨站图关联、第四代 AI 动态风控与边缘前置；并保留 v1.0.5 的 R/C/T 短板根治（探针 [Exxx] 中文编号+自动重试、FAQ 28 条、5分钟上手路径图、国内环境适配）。触发词：网站爬不动、抓取失败、被封了、返回403/429、页面打不开、想采集数据、怎么绕过限制、这个网站能爬吗、帮我分析反爬、电商价格监控、网页数据采集、公开数据抓取、招聘信息/商品价格/热点榜单、Cloudflare 拦截、验证码过不去、字体反爬、JS 加密参数、TLS 指纹、自家 Chrome 采集、指纹伪装、拟人化浏览、anti-bot、bypass。
+description: 网站反爬机制的识别、分层诊断与合法绕过（集大成版，一站涵盖市面上主流反爬 skill 的能力）。先用探针判定站点用了哪一层防护（IP/TLS指纹/JS挑战/浏览器指纹/行为分析/验证码/字体CSS加密/参数加密），再按「最低成本阶梯」逐级升级方案（curl_cffi → patchright/nodriver → camoufox → 真实浏览器CDP → 商业API）。含 Cloudflare/Akamai/DataDome/PerimeterX/Kasada 与国内瑞数/极验/顶象/腾讯天御/同盾/数美/网易易盾 的指纹特征库；并内置 自家Chrome CDP复用(L5)、指纹池(UA/分辨率加权)、反检测注入清单(addInitScript)、拟人逐字打字、自适应抗改版(auto_save)、选器路由矩阵、合规四查。v1.0.7 更新 2026-08 市场增量：Cloudflare Precursor 会话级持续行为验证（生理级特征判定，均匀随机拟人反而成 bot 指纹）、Web Bot Auth(RFC 9421)/DataDome KYA/HUMAN Verified AI Agent 身份认证浪潮、DataDome Agent Trust+Priority Protect、Kasada V2、BotBase 与 AI 诱饵页面；v1.0.6 已补 JA4+ 完整指纹体系（JA4/JA4S/JA4H/JA4L 四维交叉，打乱扩展顺序绕过已失效）、Cloudflare AI 流量 Search/Agent/Training 分类与 2026-09-15 默认屏蔽 Agent、DataDome 意图分析+85000 客户模型、Akamai 持续认证、Kasada bytecode VM+时间绑定 token、设备DNA持久化+跨站图关联、第四代 AI 动态风控与边缘前置；并保留 v1.0.5 的 R/C/T 短板根治（探针 [Exxx] 中文编号+自动重试、FAQ 30 条、5分钟上手路径图、国内环境适配）。触发词：网站爬不动、抓取失败、被封了、返回403/429、页面打不开、想采集数据、怎么绕过限制、这个网站能爬吗、帮我分析反爬、电商价格监控、网页数据采集、公开数据抓取、招聘信息/商品价格/热点榜单、Cloudflare 拦截、验证码过不去、字体反爬、JS 加密参数、TLS 指纹、自家 Chrome 采集、指纹伪装、拟人化浏览、anti-bot、bypass。
 agent_created: true
 ---
 
@@ -139,7 +139,7 @@ python scripts/probe.py https://目标站
 ③ 对号入座选方案  L0 找 API → L1 curl_cffi → L2 住宅代理 → L3 patchright
                   → L4 camoufox → L5 web-access（真实浏览器）
                  ↓ 不确定时
-④ 查 FAQ 速查     references/FAQ.md（28 个场景问题 + 错误代码速查表）
+④ 查 FAQ 速查     references/FAQ.md（30 个场景问题 + 错误代码速查表）
                  ↓ 仍卡住
 ⑤ 看实战案例      SKILL.md §8（B站/Cloudflare/电商字体 3 个完整案例）
 ⑥ 看踩坑经验库    references/site-cases.md（瑞数/Akamai/字体反爬等真实记录）
@@ -473,19 +473,25 @@ with sync_playwright() as p:
 | `references/toolbox.md` | 选工具、要可跑的代码模板（curl_cffi/patchright/nodriver/camoufox/拟人行为/代理轮换/CDP 复用） |
 | `references/cdp-reuse.md` | **L5 深潜**：自家 Chrome CDP 复用完整指南（启动参数、连接发现、智能等待、多备选选择器、SPA 路由、HttpOnly cookie、数据提取层级、实测踩坑库） |
 | `references/stealth-profiles.md` | 指纹池（UA/分辨率加权）+ 反检测注入清单（addInitScript）+ 受控组件输入 + 拟人逐字打字 + 并发限速 |
-| `references/FAQ.md` | **新手先看 / 踩坑速查**：28 个场景化高频问题（入门/报错/浏览器/验证码/合规/工具 6 类）+ 11 条反模式 + 错误代码速查表（E001~E999 对应探针报错）+ 3 分钟排查流程图 |
+| `references/FAQ.md` | **新手先看 / 踩坑速查**：30 个场景化高频问题（入门/报错/浏览器/验证码/合规/工具/2026新机制 7 类）+ 12 条反模式 + 错误代码速查表（E001~E999 对应探针报错）+ 3 分钟排查流程图 |
 | `references/site-cases.md` | **本 skill 独有资产：已验证站点经验库**（脱敏真实案例，含瑞数无限 debugger、Akamai 影子封禁、字体反爬、电商降级空壳页等踩坑记录） |
 | `scripts/env-check.py` | **安装后第一步就跑**：自动检测 Python 版本/网络连通性/curl_cffi 等可选依赖/本机浏览器，输出红黄绿中文报告 + 修复建议，避免中途因环境缺依赖而报错 |
 
 ## 变更记录
 
+- **v1.0.7**（2026-08 市场增量：会话级行为验证 + AI Agent 身份认证浪潮）
+  - `references/mechanisms.md`：§第 6 层新增 **Cloudflare Precursor 持续验证**（2026-07-13 GA，取代 JSD；生理级特征判定——腕部旋转弧度/生理手抖/认知识别延迟 vs「高斯噪声+均匀延迟」；与 `cf_clearance` 深度绑定，中途掉分动态升级挑战；对策升级为行为录制回放>参数化仿真、重尾延迟分布、人机协同）
+  - `references/vendors.md`：Cloudflare 补 **Precursor + BotBase/Attribution Business Insights + AI 诱饵页面**；DataDome 补 **Agent Trust + Priority Protect**（4 类 AI 流量分类 + 100 分动态信任 + KYA 认证 + 售票虚拟候场室）；HUMAN 补 **AgenticTrust + Verified AI Agent**（SATORI 数据集）；Kasada 补 **V2**（传感器 15 倍提升 + 自研解释器 + 消灭 CAPTCHA）；新增「AI Agent 身份认证浪潮」趋势段（**Web Bot Auth / RFC 9421 / Ed25519 / Google agent.bot.goog**）；时效性提醒补 Precursor 警示
+  - `references/site-cases.md`：新增**案例 I**（Precursor：过 Turnstile 翻几页仍被封，误判换 IP 无效）；速查表加 Precursor 行
+  - `references/FAQ.md`：扩至 **30 条**（新增 Q29 Precursor 会话掉分、Q30 Web Bot Auth 对 UA 伪造的影响）；反模式扩至 12 条（补「均匀随机延迟冒充人类节奏」）
+  - `references/toolbox.md` + `references/stealth-profiles.md`：**延迟分布统一规则落地**——人类节奏类延迟一律 `human_delay`（对数正态重尾）+ 认知识别延迟（~200ms）+ 速度衰减手抖 + 10% 思考停顿，修复此前模板代码自身使用 `randint/uniform` 均匀分布与文档自相矛盾的问题；新增 `replay_track` 人工轨迹回放函数（Precursor 站首选对策的代码落地）；网络层重试退避保留均匀抖动（场景不同，两者明确区分）；FAQ Q14 与 mechanisms.md L1 段的均匀随机示例同步改为重尾分布
+  - `SKILL.md`：合规红线「禁止」清单固化第 5 条——**勿将本能力封装为「可一键自动注入对话上下文」的插件**（意图路由自动注入 skill body 类形态），避免被供应链投毒复用；判层与绕过代码须保持分离、可读、可审、可逆（源自 DSH 插件市场 7k+ 风险分析「用途合规 ≠ 传播面安全」闭环，2026-08-19）
 - **v1.0.6**（更新 2026 新反爬趋势，知识库升级）
   - `references/mechanisms.md`：第 3 层补 **JA4+ 完整指纹体系**（JA4/JA4S/JA4H/JA4L 四维交叉，打乱扩展顺序绕过已失效）；第 5 层补**设备 DNA 持久化指纹 + 跨站图关联（GNN，击败 IP 轮换）**；新增「2026 新机制」段落（第四代 AI 动态风控 / 无感影子封禁升级 / 边缘前置风控 / 多模态行为语义理解）
   - `references/vendors.md`：Cloudflare 补 **JA4+ 评分 + 150+ 环境检查 + AI 流量 Search/Agent/Training 分类 + 2026-09-15 默认屏蔽 Agent**；DataDome 补**意图分析 + 85,000 客户模型**；Akamai 补**持续认证**；Kasada 补**bytecode VM（ips.js）+ 时间绑定 token（KP_UIDz / x-kpsdk-*）**；HUMAN 补**跨站行为指纹**；时效性提醒补 AI 动态风控警示
   - `references/site-cases.md`：新增案例 G（Cloudflare AI 流量分类 → agent 被归 Agent 类）与案例 H（Kasada 时间绑定 token → 换 IP 即 429）
   - `references/toolbox.md`：L1 段补 **JA4+ 自查与应对**（curl_cffi 一行覆盖四维、老"乱序扩展绕过"已失效）
   - `SKILL.md`：§0 国内适配补 **Agent 类自动化被屏蔽**提醒
-- **未发布草稿（v1.0.7 候选）**：`SKILL.md` §0 合规红线「禁止」清单新增第 5 条——勿将本能力封装为「可一键自动注入对话上下文」的插件（如意图路由自动注入 skill body 类形态），避免被供应链投毒复用；判层与绕过代码须保持分离、可读、可审、可逆。源于 DSH 插件市场（7k+）风险分析的「用途合规 ≠ 传播面安全」闭环（2026-08-19）。
 - **v1.0.5**（冲刺 4.9：R/C/T 短板根治）
   - `scripts/probe.py`：所有报错加 `[Exxx]` 中文编号体系（E001 DNS ~ E999 兜底），**彻底杜绝英文堆栈泄漏**；新增 `fetch_*_retry` 自动重试（网络层失败/5xx 指数退避 3 次，回应"不像有些工具会自动重试"）；`friendly_error` 增补 13 类中文分支
   - `references/FAQ.md`：从 10 条扩至 **28 条**，按入门/报错/浏览器/验证码/合规/工具 6 类组织；新增「错误代码速查表」与探针 `[Exxx]` 打通；反模式清单 8→11 条

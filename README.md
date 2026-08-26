@@ -30,7 +30,7 @@
 ### 方式 A：从 npm（发布后）
 
 ```bash
-dsh plugin --profile web add @ww15799927711/anti-bot-bypass-dsh@0.2.0
+dsh plugin --profile web add @ww15799927711/anti-bot-bypass-dsh@0.3.0
 ```
 
 ### 方式 B：从本仓库本地安装
@@ -67,7 +67,7 @@ anti-bot-bypass-dsh/
         └── references/
             ├── mechanisms.md    # 八层机制详细原理与对策
             ├── vendors.md       # 国内外厂商指纹识别
-            ├── FAQ.md           # 28 条高频场景问答 + 错误码速查
+            ├── FAQ.md           # 30 条高频场景问答 + 错误码速查
             ├── site-cases.md    # 已验证站点经验库（脱敏真实踩坑）
             ├── stealth-profiles.md  # 指纹池 / 反检测注入 / 拟人输入
             ├── cdp-reuse.md     # 自家 Chrome CDP 复用完整指南
@@ -98,7 +98,15 @@ npm login
 npm publish --access public
 ```
 
-发布后用户即可用 `dsh plugin --profile web add @ww15799927711/anti-bot-bypass-dsh@0.2.0` 安装。
+发布后用户即可用 `dsh plugin --profile web add @ww15799927711/anti-bot-bypass-dsh@0.3.0` 安装。
+
+---
+
+## 版本历史
+
+- **v0.3.0** (2026-08-26): 同步 skill v1.0.7 —— ① 新增 Cloudflare **Precursor** 会话级持续行为验证（机制层对策 + 案例 I + FAQ Q29/Q30）；② 新增「AI Agent 身份认证浪潮」趋势段（Web Bot Auth / RFC 9421 / KYA）；③ DataDome Agent Trust + Priority Protect、HUMAN AgenticTrust、Kasada V2 厂商条目；④ **拟人延迟统一为对数正态重尾分布**（human_move/type/scroll/warmup + JS 版），新增 `replay_track` 轨迹回放函数；⑤ DSH 供应链安全条款（禁止封装为自动注入插件）正式并入发布。
+- **v0.2.0** (2026-08): 升级为完整版（判层框架 + 探针 + 全套厂商绕过模板 + 合规红线）。
+- **v0.1.0** (2026-08): 初始 safe-subset 版本。
 
 ---
 

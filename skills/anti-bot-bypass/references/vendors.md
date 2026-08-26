@@ -18,6 +18,8 @@
   - **Training**（抓内容训练/微调模型）
   - **默认规则（2026-09-15 起对新域名生效）**：广告页默认屏蔽 **Training + Agent**，Search 默认放行；多用途爬虫（如 Googlebot 同时做 Search+Training）封锁任一功能即整体受限。
   - **对 agent 抓取的影响**：browser-use / 浏览器驱动类 agent 被归为 Agent 类，**在广告页（含大量电商/媒体页）默认被屏蔽**；Cloudflare 同时推 `content-use` robots.txt 信号 + Pay Per Crawl（HTTP 402 付费抓取）—— 合法抓取路径正从"绕过指纹"转向"拿到显式、诚实的访问许可"。
+- **🆕 Precursor 持续行为验证（2026-07-13 GA）**：Turnstile 的补充引擎，**取代 JavaScript Detections（JSD）**。会话级持续验证：全程采集鼠标轨迹/键盘节奏/剪贴板活动/页面可见性，用**生理级特征**（腕部旋转弧度、生理手抖频率、认知识别延迟）区分真人 vs「高斯噪声 + 均匀延迟」仿真；与 `cf_clearance` 深度绑定，中途掉分动态升级挑战。站点双模式：Minimize Friction / Maximize Security。**含义：过 Turnstile 只是入场券，整段会话行为不达标照样出局**（判定与对策见 mechanisms.md §第 6 层）。
+- **🆕 BotBase + Attribution Business Insights（2026-07-01）**：全网追踪 bot 的可搜索目录 + 爬取/引荐流量比例看板（产业观测面）。另有新一代 **AI 诱饵页面（honey pot）**：把可疑流量引流到仿真页浪费时间——表现为"抓取一直 200 但数据永远不对"，注意与影子封禁区分。
 
 ### Akamai Bot Manager
 - **识别**：`_abck` / `bm_sz` / `ak_bmsc` / `bm_sv` cookie
@@ -32,12 +34,14 @@
 - **特点**：惩罚"同一指纹高频复现" —— 指纹要跨会话变化，但每个会话内必须自洽
 - **🆕 意图分析（intent analysis，2025 新增）**：不只判断"是不是自动化"，还评估"**访问目的是什么**"——直接抓取 vs 正常浏览的意图画像差异；并对 **LLM/AI 爬虫单独分类**管理
 - **🆕 85,000+ 客户 ML 模型**：每个站点一个独立训练的模型，每天处理 **5 万亿+ 信号**，响应 <2ms —— **每个受保护站点都是独立任务，A 站生效的组合不能直接搬到 B 站**
+- **🆕 Agent Trust + Priority Protect（2026-05）**：把 AI 流量细分 **4 类**（AI Crawler / AI Assistant / Agentic Browser / Autonomous Agent）分别管控，配动态 100 分信任评分；推 **KYA（Know Your Agent）认证**——agent 出示可验证身份换更高配额；Priority Protect 为限量发布/售票场景设"**虚拟候场室**"，把可疑 agent 挡在真实库存之外（票务/抢购场景的 agent 对抗进一步升级）
 - **起点**：L4，硬化 Chromium/camoufox + 住宅或移动 IP + 5~10s 级慢速
 
 ### PerimeterX / HUMAN
 - **识别**：`_px3` / `_pxhd` / `_pxvid` / `pxcts` / "Access to this page has been denied"
 - **权重**：行为生物特征（鼠标轨迹、滚动速度、按键微时序）+ 跨导航的 cookie 状态连续性
 - **🆕 跨站行为指纹（cross-site behavioral fingerprinting）**：在多个客户站点间追踪**行为一致性**——同一套工具/同一运营者在不同站点的行为模式会被关联，识别 bot 运营者
+- **🆕 AgenticTrust + Verified AI Agent（2026）**：会话级 agent 治理 + 开源加密身份验证框架（Verified AI Agent），基于 SATORI 威胁情报数据集识别 agent 真实身份——方向与 Web Bot Auth 一致：**让 agent「持证上岗」，匿名 agent 越来越难混**
 - **特点**：**放你进门，等关键动作（加购、提交、注册）时才收网**；clearance **强 IP 绑定，跨 IP 使用比不带 cookie 罚得更狠**
 - **起点**：L4。持久化 browser context + 目标页前完整会话预热
 
@@ -49,6 +53,12 @@
   - token **时间绑定**：T=0 生成的 payload 在 T=60s 提交即被拒（防重放）；**IP 变更会破坏 IP 绑定的 token 验证**
   - 429 + `x-kpsdk-ct` 错误指示 = token 校验失败（过期/重放/换 IP/指纹漂移）
 - **对策**：需完整浏览器执行 sensor（headless 极难），且要**锁定同一 IP 直到 token 生命周期结束** → L5 真实浏览器或 L6 商业 API
+- **🆕 V2 平台（2026）**：客户端侦测传感器灵敏度 **15 倍提升**；混淆升级为**自研自定义解释器**；增强加密挑战的目标是**消灭 CAPTCHA**（无感判定直接放行/拦截）；对 headless 浏览器自动化的实时防御增强——**V1 时代的过挑战经验不能直接套用**，遇到 V2 站点预期成功率下降，预留 L6 预算
+
+### 🆕 趋势：AI Agent 身份认证浪潮（2026 下半年）
+- **Web Bot Auth（RFC 9421 + Ed25519 签名）**：IETF 工作组 2026 年初成立，标准定稿目标 2026-08；Cloudflare / Amazon / Akamai / OpenAI / Google 均在支持，Google 已测试 `agent.bot.goog` 域名验证。agent 用**密钥对自证身份**，站点验签后决定放行与配额。
+- **含义**：合法自动化的通行路径正从「伪装成人类」转向「**诚实出示 agent 身份 + 拿授权**」——UA 伪造与 IP 白名单这类"匿名混入"策略在带头厂商处将逐步失效。自用低频抓取影响尚小（暂不强制），但做产品化 agent 要提前布局签名身份。
+- 与 Cloudflare AI 三分类、DataDome KYA、HUMAN Verified AI Agent 是同一浪潮：**匿名 bot 的察觉成本趋零，持证 agent 才有配额**。
 
 ### 其他
 - **Imperva/Incapsula**：`incap_ses_*` / `visid_incap_*` / `nlbi_*` / `x-iinfo` 头 / `_Incapsula_Resource` → L3
@@ -140,7 +150,7 @@
 
 ## 时效性提醒
 
-厂商侧持续迭代，**开源 stealth 方案落后风控通常数周**。一条流水线"上周还好，今天全挂"是常态，不是你的代码坏了。2026 进入第四代 **AI 动态风控**后，固定绕过方案有效期进一步从"数月"缩短到"数天"——大模型会实时生成新规则，今天写死的对策下周可能就失效。
+厂商侧持续迭代，**开源 stealth 方案落后风控通常数周**。一条流水线"上周还好，今天全挂"是常态，不是你的代码坏了。2026 进入第四代 **AI 动态风控**后，固定绕过方案有效期进一步从"数月"缩短到"数天"——大模型会实时生成新规则，今天写死的对策下周可能就失效。2026-07 起 **Cloudflare Precursor** 又把行为验证从入口延伸到整个会话，"过一次挑战吃遍全场"的旧经验加速失效。
 - 先跑探针重新判层，再改方案，别盲目改代码
 - 生产链路要有"成功率监控 + 数据真实性回归"，掉了立刻告警
 - 把每个站点的**生效方案 + 失效日期**记进 `web-access/references/site-patterns/{domain}.md`，形成经验资产

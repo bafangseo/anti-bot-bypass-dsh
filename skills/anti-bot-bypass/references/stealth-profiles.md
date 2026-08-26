@@ -131,21 +131,27 @@ MOBILE_VIEWPORT = [(390, 844, 40), (393, 851, 25), (414, 896, 20), (375, 812, 15
 
 ```javascript
 // 在 page.evaluate 内执行：像人一样逐字符输入
+function humanDelay(mu, sigma = 0.6) {
+  // 对数正态重尾延迟（Box-Muller）——人类节奏禁用均匀随机（Precursor 识别特征）
+  const u = 1 - Math.random(), v = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  return Math.max(30, Math.exp(Math.log(mu) + sigma * z));
+}
 function humanType(el, text) {
   const proto = HTMLInputElement.prototype;
   const desc = Object.getOwnPropertyDescriptor(proto, 'value');
   for (const ch of text) {
     desc.set.call(el, el.value + ch);
     el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: ch }));
-    // 人打字有快有慢
-    await new Promise(r => setTimeout(r, 40 + Math.random() * 120));
+    // 重尾键间延迟（中位 ~90ms）+ 10% 概率思考长停顿，偶有 1s+ 停顿
+    await new Promise(r => setTimeout(r, humanDelay(Math.random() < 0.1 ? 900 : 90, 0.7)));
   }
   el.dispatchEvent(new Event('change', { bubbles: true }));
 }
 // 调用（注意要在 async IIFE 里）
 ```
 
-配合 `toolbox.md` 里的 `human_move`（贝塞尔轨迹）、`human_scroll`（变速滚动）、`warmup`（会话预热），形成完整「像人」闭环：先首页停留滚动预热 → 贝塞尔移动到搜索框 → 逐字打字 → 犹豫点击 → 变速滚动阅读。
+配合 `toolbox.md` 里的 `human_move`（贝塞尔轨迹 + 认知识别延迟）、`human_scroll`（变速滚动）、`warmup`（会话预热）——所有延迟统一走 `human_delay`（对数正态重尾，见 toolbox.md 统一规则），形成完整「像人」闭环：先首页停留滚动预热 → 贝塞尔移动到搜索框 → 逐字打字 → 犹豫点击 → 变速滚动阅读。Precursor 站点再升一级：用 `replay_track` 回放人工录制的真实轨迹（保真度 > 数学合成）。
 
 **逐字打字是抗行为分析的关键一招**：机器人 `el.value=` 瞬间填满，缺输入事件流；真人每秒 3~8 字符且有停顿。
 

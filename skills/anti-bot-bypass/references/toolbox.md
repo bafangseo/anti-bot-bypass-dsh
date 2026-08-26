@@ -159,46 +159,71 @@ with Camoufox(
 - **坑**：维护已移交 Clover Labs，新版 experimental；生产用稳定版 `pip install camoufox`（alpha 是 `cloverlabs-camoufox`）；自行 build 必须 Linux（WSL 不行）
 - 部分站点只封 Chrome 形状 → Firefox 形状反而能过；反之亦有
 
-**拟人行为工具函数**（任何浏览器方案都该套上）：
+**拟人行为工具函数**（任何浏览器方案都该套上）。
+
+> **🆕 延迟分布统一规则（v1.0.7，Precursor 对策）**：**人类节奏类延迟一律走 `human_delay`（对数正态重尾分布）**——Precursor 等生理级行为分析重点识破「均匀随机/高斯噪声」。仅**网络层重试退避**（如上面 fetch 的 `2**i*5 + uniform(0,2)`）继续用均匀抖动——那是给服务器看的限速礼貌，与行为分析无关，两者别混。
 
 ```python
 import random, math
 
+def human_delay(mu=250, sigma=0.7, lo=30, hi=6000):
+    """重尾延迟（对数正态）：mu=中位数毫秒，sigma=形状（0.6~1.0 越大越拖尾）。
+    所有'人类节奏'等待统一用它，替代 randint/uniform。"""
+    ms = random.lognormvariate(math.log(mu), sigma)
+    return int(max(lo, min(ms, hi)))            # 钳位防极端值拖垮脚本
+
 def human_move(page, x2, y2, steps=25):
-    """贝塞尔曲线 + 抖动，替代一步到位的 mouse.move"""
+    """贝塞尔轨迹 + 认知识别延迟 + 速度衰减手抖（Precursor 对策）"""
+    # ① 认知识别延迟：视线到达目标后 ~200ms 才开始移动（真人生理特征）
+    page.wait_for_timeout(human_delay(mu=200, sigma=0.6))
     x1, y1 = random.randint(0, 200), random.randint(0, 200)
     cx, cy = (x1 + x2) / 2 + random.randint(-120, 120), (y1 + y2) / 2 + random.randint(-120, 120)
     for i in range(steps + 1):
         t = i / steps
         x = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * cx + t ** 2 * x2
         y = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * cy + t ** 2 * y2
-        page.mouse.move(x + random.uniform(-1.5, 1.5), y + random.uniform(-1.5, 1.5))
-        page.wait_for_timeout(random.randint(8, 28))
+        # ② 速度衰减手抖：轨迹两端慢（手抖大）、中段快（手抖小）——真人特性
+        speed = 1 - abs(0.5 - t) * 2
+        jitter = random.uniform(-1.5, 1.5) * (1.6 - speed)
+        page.mouse.move(x + jitter, y + jitter * 0.8)
+        page.wait_for_timeout(human_delay(mu=15, sigma=0.5))
 
 def human_scroll(page, total=3000):
-    """变速分段滚动 + 偶尔回滚"""
+    """变速分段滚动 + 偶尔回滚（重尾停顿）"""
     done = 0
     while done < total:
-        d = random.randint(180, 520)
+        d = int(min(max(random.lognormvariate(math.log(320), 0.5), 80), 900))
         page.mouse.wheel(0, d); done += d
-        page.wait_for_timeout(random.randint(250, 900))
+        page.wait_for_timeout(human_delay(mu=550, sigma=0.8))    # 重尾：偶有长停顿（在看内容）
         if random.random() < 0.15:
             page.mouse.wheel(0, -random.randint(60, 180))
-            page.wait_for_timeout(random.randint(200, 600))
+            page.wait_for_timeout(human_delay(mu=400, sigma=0.7))
 
 def warmup(page, home, target):
     """会话预热：先首页停留滚动，再进目标页——PerimeterX/Akamai 必备"""
     page.goto(home, wait_until="domcontentloaded")
-    page.wait_for_timeout(random.randint(1800, 4200))
+    page.wait_for_timeout(human_delay(mu=2800, sigma=0.5))
     human_scroll(page, 1200)
     page.goto(target, wait_until="domcontentloaded")
 
 def human_type(page, selector, text):
-    """逐字打字（抗行为分析）：受控组件必须走原生 InputEvent，不能 el.value="""
+    """逐字打字（抗行为分析）：重尾键间延迟 + 10% 概率思考长停顿；
+    受控组件必须走原生 InputEvent，不能 el.value="" """
     page.focus(selector)
     for ch in text:
-        page.keyboard.type(ch, delay=random.randint(40, 160))   # 真人每秒 3~8 字符
-    page.wait_for_timeout(random.randint(200, 600))
+        page.keyboard.type(ch)
+        if random.random() < 0.10:                              # 思考/回看，重尾长停顿
+            page.wait_for_timeout(human_delay(mu=900, sigma=0.8))
+        page.wait_for_timeout(human_delay(mu=90, sigma=0.6))    # 中位 90ms 键间延迟
+    page.wait_for_timeout(human_delay(mu=400, sigma=0.7))
+
+def replay_track(page, track):
+    """回放人工录制的真实轨迹（Precursor 站首选：保真度 > 任何数学合成）。
+    track: [(x, y, dt_ms), ...]——人工操作时用 DevTools Recorder 录制导出，
+    或在 L5 真实浏览器里挂 CDP Input 事件监听录制，再转成该格式。"""
+    for x, y, dt in track:
+        page.mouse.move(x, y)
+        page.wait_for_timeout(max(5, int(dt)))
 ```
 
 > **指纹池 + 完整反检测注入 + 受控组件输入 + 并发限速**：见 `references/stealth-profiles.md`（含按真实份额加权的 UA/分辨率池、WebGL/Canvas 微噪声、React/Vue `humanType` 原生事件版）。

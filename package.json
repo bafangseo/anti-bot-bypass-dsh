@@ -1,7 +1,7 @@
 {
   "name": "@ww15799927711/anti-bot-bypass-dsh",
-  "version": "0.2.0",
-  "description": "DeepSeek Harness Skill bundle for the anti-bot-bypass (反爬机制识别与Bypass) skill — full version: judgment framework + env self-check + probe.py (curl_cffi impersonation) + vendor bypass templates (stealth-profiles/cdp-reuse/toolbox). Compliance red lines enforced.",
+  "version": "0.3.0",
+  "description": "DeepSeek Harness Skill bundle for the anti-bot-bypass (反爬机制识别与绕行) skill — full version: judgment framework + env self-check + probe.py (curl_cffi impersonation) + vendor bypass templates (stealth-profiles/cdp-reuse/toolbox). Compliance red lines enforced. Synced with skill v1.0.7: Cloudflare Precursor continuous session verification, Web Bot Auth/KYA trend section, heavy-tail (lognormal) human-delay unification, replay_track.",
   "license": "MIT",
   "type": "module",
   "main": "./lib/index.js",
